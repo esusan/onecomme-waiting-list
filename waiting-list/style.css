@@ -1,0 +1,122 @@
+/* waiting-list：参加型管理の待機リスト */
+@font-face {
+  font-family: "Waiting List UDEV";
+  src: url("./fonts/UDEVGothic-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-display: block;
+  /* UDEV Gothicは全角スペースを点線の四角で描くので、U+3000だけ外す */
+  unicode-range: U+0000-2FFF, U+3001-10FFFF;
+}
+
+:root {
+  --size: 24px;
+  --text: #ffffff;
+  --play: #ffd23e;
+  --bg-alpha: 0;
+  --font: "Waiting List UDEV", "BIZ UDGothic", monospace;
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --avatar: calc(var(--size) * 1.4);
+}
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+[hidden] { display: none; }
+
+/* ソースの横幅いっぱいに置く。行は番号・アイコン・名前の位置をそろえて左から並べる */
+.panel {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px 8px;
+  color: var(--text);
+  font-family: var(--font);
+  font-weight: 700;
+  font-size: var(--size);
+  /* 背景なしでも明るいゲーム画面で読めるよう、黒の縁取り（4方向）＋ぼかしの影 */
+  text-shadow:
+    1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000,
+    0 0 4px rgba(0, 0, 0, .9), 0 2px 4px rgba(0, 0, 0, .8);
+}
+.has-bg .panel {
+  background: rgba(0, 0, 0, var(--bg-alpha));
+  border-radius: 6px;
+}
+
+/* 行：縦に並べる */
+.rows { display: flex; flex-direction: column; gap: 4px; }
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: calc(var(--size) * 1.6);
+  max-width: 100%;
+}
+
+/* 列：横に並べて、入りきらなければ折り返す */
+.layout-column .rows { flex-direction: row; flex-wrap: wrap; column-gap: 14px; row-gap: 4px; }
+.layout-column.side-right .rows { justify-content: flex-end; }
+.layout-column .no { width: auto; }
+
+/* 空のときの表記は寄せた側にそろえる */
+.row.empty { justify-content: flex-start; }
+.side-right .row.empty { justify-content: flex-end; }
+.row.empty .text { flex: 0 1 auto; }
+
+/* 番号の欄はどの行も同じ幅（PLAYの行は文字を小さくするので、emで決めると欄まで縮んでアイコンがずれる）。幅はscript.jsで計算する */
+.no {
+  flex: 0 0 auto;
+  width: var(--no-width, calc(var(--size) * 1.9));
+  white-space: nowrap;
+  text-align: right;
+  color: color-mix(in srgb, var(--text) 80%, #000);
+}
+.row.playing .no { font-size: .65em; color: var(--play); }
+.avatar {
+  flex: 0 0 var(--avatar);
+  width: var(--avatar);
+  height: var(--avatar);
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, .12);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .8), 0 1px 3px rgba(0, 0, 0, .8);
+}
+.avatar img { display: block; width: 100%; height: 100%; }
+.text {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row.playing .text { color: var(--play); }
+
+.more { margin-top: 4px; font-size: .8em; color: color-mix(in srgb, var(--text) 80%, #000); }
+.side-right .more { text-align: right; }
+
+/* 出入り：寄せた側から開く */
+@keyframes open-from-right {
+  from { clip-path: inset(0 0 0 100%); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes open-from-left {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+.side-right .row-enter-active { animation: open-from-right 240ms var(--ease-out) both; }
+.side-left .row-enter-active { animation: open-from-left 240ms var(--ease-out) both; }
+.row-leave-active { display: none; }
+.row-move { transition: transform 240ms var(--ease-out); }
+
+.setup-error {
+  margin: 8px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, .8);
+  border: 2px solid #ff5a5a;
+  color: #fff;
+  font: 700 14px/1.6 "BIZ UDGothic", sans-serif;
+}

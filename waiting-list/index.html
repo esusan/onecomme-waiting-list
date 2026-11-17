@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer" />
+    <!-- ?v= は更新したときに上げる（古いファイルがキャッシュで使われないように） -->
+    <link rel="stylesheet" href="./style.css?v=4" />
+  </head>
+  <body hidden>
+    <div id="app" class="panel" v-show="shown">
+      <transition-group class="rows" name="row" tag="div">
+        <div v-for="r in rows" :key="r.key" class="row" :class="{ playing: r.playing }">
+          <span class="no" v-if="showNo">{{ r.no }}</span>
+          <span class="avatar" v-if="showIcon"><img alt="" v-if="r.profileImage" :src="r.profileImage" /></span>
+          <span class="text">{{ r.text }}</span>
+        </div>
+        <div v-if="emptyShown" key="__empty" class="row empty"><span class="text">{{ emptyText }}</span></div>
+      </transition-group>
+      <div class="more" v-if="hidden > 0">{{ moreText }}</div>
+    </div>
+    <!-- わんコメ内ではわんコメ付属のVueとOneSDKを使う。わんコメの外（設定ページのプレビュー）ではCDNのVueに切り替え、ダミーで動かす -->
+    <script src="../__origin/js/vue3.min.js"></script>
+    <script>
+      window.Vue || document.write('<script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"><\/script>')
+    </script>
+    <script src="../__origin/js/onesdk.js"></script>
+    <script src="./config.js?v=3"></script>
+    <script src="./script.js?v=4"></script>
+  </body>
+</html>

@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>waiting-list 設定</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="description" content="わんコメ用の参加型待機リストテンプレート waiting-list の見た目を決めて、OBSに貼るURLを作るページ">
+<!-- リンクカード用 -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="waiting-list｜わんコメ用 参加型の待機リストテンプレート">
+<meta property="og:description" content="わんコメの参加型管理の待機リストを、アイコンと名前で一覧表示します。見た目を選んでOBSに貼るURLを作れます。">
+<meta property="og:url" content="https://esusan.github.io/onecomme-waiting-list/">
+<meta name="twitter:card" content="summary">
+<style>
+  :root {
+    --bg: #14161a;
+    --panel: #1d2026;
+    --line: #2e333b;
+    --text: #e8eaee;
+    --muted: #9aa1ab;
+    --accent: #ffd23e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 20px; line-height: 1.4; margin: 56px 0 16px; padding: 4px 0 8px 12px; border-left: 4px solid var(--accent); border-bottom: 1px solid var(--line); }
+  h3 { font-size: 16px; margin: 24px 0 8px; }
+  p { margin: 0 0 12px; }
+  .lead { color: var(--muted); margin-bottom: 24px; }
+  a { color: var(--accent); }
+  code { background: var(--panel); padding: 1px 6px; border-radius: 4px; font-size: .92em; word-break: break-all; }
+
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: start; }
+  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+
+  .form { display: grid; gap: 14px; }
+  .field { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+  .field > label, .field > .label { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; margin-bottom: 6px; }
+  .field .value { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .field .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  input[type=color] { width: 56px; height: 32px; border: 0; padding: 0; background: none; cursor: pointer; }
+  input.text {
+    width: 100%;
+    background: #0f1114;
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font: inherit;
+    font-size: 14px;
+  }
+  .choices { display: flex; flex-wrap: wrap; gap: 6px; }
+  .choices label { cursor: pointer; }
+  .choices input { position: absolute; opacity: 0; }
+  .choices span { display: inline-block; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); }
+  .choices input:checked + span { border-color: var(--accent); color: var(--text); background: rgba(255, 210, 62, .12); }
+  .choices input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .row { display: flex; align-items: center; gap: 10px; }
+
+  .preview-wrap { position: sticky; top: 16px; max-width: 100%; }
+  .preview-bg { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .stage {
+    height: 420px;
+    max-width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    justify-content: flex-end;
+    padding: 12px;
+  }
+  .stage.left { justify-content: flex-start; }
+  .stage.dark { background: linear-gradient(160deg, #2b3340, #0d1015); }
+  .stage.bright { background: linear-gradient(160deg, #f4f7fb, #c9d4e0); }
+  .stage.check { background: repeating-conic-gradient(#3a3d42 0 25%, #2a2c30 0 50%) 0 0 / 20px 20px; }
+  .stage iframe { border: 0; background: transparent; display: block; max-width: 100%; outline: 1px dashed rgba(255, 255, 255, .25); }
+  .size-note { color: var(--text); font-size: 14px; margin-top: 8px; }
+
+  .output { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+  .output code { display: block; background: #0f1114; padding: 10px 12px; margin-bottom: 10px; font-size: 14px; }
+  button, .button {
+    display: inline-block;
+    background: var(--accent);
+    color: #1a1500;
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .copied { color: var(--accent); margin-left: 8px; font-size: 13px; }
+  .steps > li { margin-bottom: 14px; }
+  .steps > li > p { margin: 0 0 8px; }
+  .steps .output { margin-bottom: 6px; }
+  .steps .hint { color: var(--muted); font-size: 13px; margin: 0; }
+  .steps .shot { display: block; max-width: min(100%, 560px); height: auto; border: 1px solid var(--line); border-radius: 6px; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .swatch {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    cursor: pointer;
+  }
+  .swatch[aria-pressed="true"] { outline: 2px solid var(--text); outline-offset: 2px; }
+  .rec-w, .rec-h {
+    display: inline-block;
+    padding: 0 6px;
+    border-radius: 4px;
+    color: var(--accent);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .changed { animation: rec-flash 900ms ease-out; }
+  @keyframes rec-flash {
+    0% { background: rgba(255, 210, 62, .55); color: #1a1500; }
+    100% { background: transparent; color: var(--accent); }
+  }
+  table { border-collapse: collapse; margin: 0 0 12px; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--panel); font-weight: 600; }
+  ol, ul { padding-left: 1.4em; margin: 0 0 12px; }
+  li { margin-bottom: 4px; }
+  dt { font-weight: 700; margin-top: 12px; }
+  dd { margin: 4px 0 0; color: var(--muted); }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12.5px; line-height: 1.8; }
+  footer p { margin: 12px 0 0; }
+  .foot-links { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 36px; }
+  .foot-label { width: 8em; text-align: center; padding: 2px 8px; font-size: 11.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; }
+  .foot-name { color: var(--text); font-size: 13.5px; }
+  a.foot-name { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  a.foot-name:hover { color: var(--accent); text-decoration-color: var(--accent); }
+  .foot-more { margin-top: 6px; column-gap: 16px; }
+  .social.home { overflow: hidden; }
+  .social.home img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .social {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    transition: color .2s, border-color .2s;
+  }
+  .social:hover { color: var(--accent); border-color: var(--accent); }
+  .muted-note { color: var(--muted); font-size: 13px; }
+  .credit { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .credit input {
+    flex: 1 1 280px;
+    min-width: 0;
+    background: #0f1114;
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 8px 10px;
+    font: inherit;
+    font-size: 14px;
+  }
+  .import { margin-bottom: 20px; }
+  .import-label { display: block; font-weight: 600; margin-bottom: 2px; }
+  .import .hint { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
+  .import-status { font-size: 13px; margin: 8px 0 0; color: var(--accent); }
+  .import-status:empty { display: none; }
+  .import-status.error { color: #ff8a8a; }
+</style>
+</head>
+<body>
+<main>
+  <h1>waiting-list</h1>
+  <p class="lead">わんコメの参加型管理の待機リストを、アイコンと名前で一覧表示するテンプレートです。プレイ中の人は上に色を変えて、待っている人は並んだ順に番号付きで表示します。ここで見た目を決めると、OBSに貼るURLができます。</p>
+
+  <h2>見た目を決める</h2>
+  <div class="output import">
+    <label for="import-url" class="import-label">OBSに貼ってあるURLから続ける</label>
+    <p class="hint">OBSのブラウザソースに貼ってあるURLをここに貼ると、そのときの設定が下に読み込まれます。初めての方は空のままで大丈夫です。</p>
+    <div class="credit">
+      <input type="text" id="import-url" placeholder="http://localhost:11180/templates/custom/waiting-list/?…" spellcheck="false" autocomplete="off">
+      <button type="button" id="import">読み込む</button>
+    </div>
+    <p class="import-status" id="import-status" role="status"></p>
+  </div>
+  <div class="layout">
+    <form class="form" id="form" onsubmit="return false">
+      <div class="field">
+        <label for="text">1人分の表示</label>
+        <input type="text" class="text" id="text" value="{name}" spellcheck="false" autocomplete="off">
+        <p class="hint">おすすめは <code>{name}</code> だけです（番号とPLAYは左の欄に出て、アイコンと名前が縦にそろいます）。</p>
+        <p class="hint">使える文字：<code>{name}</code> 名前、<code>{index}</code> 番号、<code>{count}</code> 回数、<code>{totalCount}</code> 累積の参加回数、<code>{time}</code> 並んだ時刻、<code>{comment}</code> 参加したときのコメント。<code>{index}</code> を入れると左の番号の欄は出さず、プレイ中の人は <code>{index}</code> をまわりの記号（<code>.</code> や <code>No.</code> など）ごと消して表示します。</p>
+      </div>
+      <div class="field">
+        <div class="label">並べ方</div>
+        <div class="choices">
+          <label><input type="radio" name="layout" value="row" checked><span>縦に並べる</span></label>
+          <label><input type="radio" name="layout" value="column"><span>横に並べる</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label for="empty">0人のときの文字</label>
+        <input type="text" class="text" id="empty" value="参加受付中！" maxlength="40" spellcheck="false" autocomplete="off">
+        <p class="hint">待っている人が0人のときに表示します（プレイ中の人がいても、待ちが0人なら表示します）。空にすると何も表示しません。</p>
+      </div>
+      <div class="field">
+        <label for="size">文字の大きさ <span class="value" id="size-v"></span></label>
+        <input type="range" id="size" min="14" max="40" step="1" value="24">
+      </div>
+      <div class="field">
+        <div class="label">寄せる側</div>
+        <div class="choices">
+          <label><input type="radio" name="side" value="right" checked><span>右端</span></label>
+          <label><input type="radio" name="side" value="left"><span>左端</span></label>
+        </div>
+        <p class="hint">新しく並んだ人が出てくる向きと、「ほか n人」・0人のときの文字を置く側が変わります。</p>
+      </div>
+      <div class="field">
+        <div class="label">プレイ中の人の色 <span class="value" id="play-v"></span></div>
+        <div class="swatches" id="swatches" role="group" aria-label="色の候補"></div>
+        <div class="row"><input type="color" id="play" value="#ffd23e" aria-label="色を自由に選ぶ"><span class="hint" style="margin:0">候補にない色はここで選べます</span></div>
+      </div>
+      <div class="field">
+        <label for="playlabel">プレイ中の人の番号の代わりに出す文字</label>
+        <input type="text" class="text" id="playlabel" value="PLAY" maxlength="8" spellcheck="false" autocomplete="off">
+        <p class="hint">空にすると何も出しません。1人分の表示に <code>{index}</code> を入れた場合は番号の欄ごと出さないので、この文字も出ません（プレイ中の人は色だけで区別します）。</p>
+      </div>
+      <div class="field">
+        <div class="label">文字の色 <span class="value" id="color-v"></span></div>
+        <div class="row"><input type="color" id="color" value="#ffffff" aria-label="文字の色"></div>
+        <p class="hint">文字には黒い縁取りが付きます。明るい色のほうが読みやすくなります。</p>
+      </div>
+      <div class="field">
+        <label for="bg">背景の黒の濃さ <span class="value" id="bg-v"></span></label>
+        <input type="range" id="bg" min="0" max="100" step="5" value="0">
+        <p class="hint">0は背景なしで、文字の縁取りだけです。明るいゲーム画面で読みにくいときは濃くしてください。</p>
+      </div>
+      <div class="field">
+        <div class="label">フォント</div>
+        <div class="choices">
+          <label><input type="radio" name="font" value="udev" checked><span>UDEV Gothic（同梱）</span></label>
+          <label><input type="radio" name="font" value="bizud"><span>BIZ UDゴシック</span></label>
+          <label><input type="radio" name="font" value="sans"><span>游ゴシックなど</span></label>
+        </div>
+        <p class="hint">BIZ UDゴシックはWindowsに最初から入っています。</p>
+      </div>
+      <div class="field">
+        <div class="label">アイコン</div>
+        <div class="choices">
+          <label><input type="radio" name="icon" value="1" checked><span>出す</span></label>
+          <label><input type="radio" name="icon" value="0"><span>出さない</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label for="max">表示する人数 <span class="value" id="max-v"></span></label>
+        <input type="range" id="max" min="3" max="20" step="1" value="8">
+        <p class="hint">プレイ中の人も含めた数です。超えた分は「ほか n人」とまとめて表示します。</p>
+      </div>
+    </form>
+
+    <div class="preview-wrap">
+      <div class="preview-bg choices" role="radiogroup" aria-label="プレビューの人数">
+        <label><input type="radio" name="stagestate" value="all" checked><span>待ちあり</span></label>
+        <label><input type="radio" name="stagestate" value="playing"><span>プレイ中だけ</span></label>
+        <label><input type="radio" name="stagestate" value="empty"><span>0人</span></label>
+        <label><input type="radio" name="stagestate" value="1"><span>動き</span></label>
+      </div>
+      <div class="preview-bg choices" role="radiogroup" aria-label="プレビューの背景">
+        <label><input type="radio" name="stagebg" value="dark" checked><span>暗い画面</span></label>
+        <label><input type="radio" name="stagebg" value="bright"><span>明るい画面</span></label>
+        <label><input type="radio" name="stagebg" value="check"><span>透過</span></label>
+      </div>
+      <div class="stage dark" id="stage"><iframe id="preview" title="プレビュー"></iframe></div>
+      <p class="size-note">OBSのブラウザソースの大きさの目安：幅 <span class="rec-w"></span> × 高さ <span class="rec-h"></span></p>
+    </div>
+  </div>
+
+  <h2>使い方</h2>
+  <ol class="steps">
+    <li>
+      <p>テンプレートをダウンロードして展開します。最初に1回だけで大丈夫です。</p>
+      <div class="output">
+        <button type="button" id="download">テンプレートをダウンロード（zip）</button>
+        <span class="copied" id="download-status"></span>
+      </div>
+    </li>
+    <li>
+      <p>中の <code>waiting-list</code> フォルダを <code>%APPDATA%\onecomme\templates\custom\</code> に入れます（エクスプローラーのアドレス欄にこのパスを貼ると開けます）。</p>
+      <img class="shot" src="img/install-folder.png" alt="customフォルダの中にwaiting-listフォルダが入っている状態" width="990" height="352">
+    </li>
+    <li>
+      <p>わんコメのテンプレート画面（右上の「…」メニュー →「テンプレート」）に waiting-list が出ていればOKです（わんコメが認識できているかの確認だけです）。出ていなければ、わんコメを起動し直してください。</p>
+      <img class="shot" src="img/template-list.jpg" alt="わんコメのメニューのテンプレートを開き、一覧にwaiting-listが表示されている状態" width="1912" height="1458">
+    </li>
+    <li>
+      <p>わんコメの参加型管理を開いて「有効化」にチェックを入れ、参加ワードを決めます。参加型管理の設定（歯車）にある「OBS用テンプレート」「行／列」「空のときの表記」は、このテンプレートでは使いません。表示する文字や並べ方は、このページで決めます。</p>
+    </li>
+    <li>
+      <p>OBSにブラウザソースを追加し、「ローカルファイル」のチェックを外したまま、URLにこれを貼ります。上で選んだ見た目の設定がURLの末尾に入っています。</p>
+      <div class="output">
+        <code id="url"></code>
+        <button type="button" id="copy">コピー</button><span class="copied" id="copied" hidden>コピーしました</span>
+      </div>
+      <p class="hint">わんコメのポートを11180から変えている場合は、URLの数字をご自分のものに書き換えてください。</p>
+    </li>
+    <li>
+      <p>同じ画面で、ブラウザソースの大きさを幅 <span class="rec-w"></span> × 高さ <span class="rec-h"></span> くらいにします。</p>
+      <p class="hint">幅は、全角10文字くらいの名前が入る大きさです。入りきらない名前は「…」で省略されます。高さは、表示する人数と「ほか n人」の行が入る大きさです。「横に並べる」にした場合は、幅を広く、高さを低くしてください。</p>
+    </li>
+    <li>配信の前に、わんコメのコメントテスター（右上の「…」メニュー →「コメントテスター」）で参加ワードを流して、OBSでの表示を確かめておくのがおすすめです。</li>
+  </ol>
+  <p>プレイ中にする・終わった人を外すといった操作は、わんコメの参加型管理の画面で行います。このテンプレートはその一覧を表示するだけです。</p>
+  <p>見た目を変えたくなったら、今OBSに貼ってあるURLを「OBSに貼ってあるURLから続ける」の欄に貼ると、前の設定から選び直せます。選び直したら5のURLを貼り直してください。わんコメのテンプレート画面からOBSへドラッグしても動きますが、その場合はURLの設定が付かず、ダウンロードしたときの設定で表示されます。</p>
+
+  <h2>表示されないとき</h2>
+  <dl>
+    <dt>赤い枠で「参加型管理のデータを受け取れません」と表示される</dt>
+    <dd>waiting-list フォルダが <code>%APPDATA%\onecomme\templates\custom\</code> の外にあります。そこに入れて、URLで開き直してください。</dd>
+    <dt>何も表示されない</dt>
+    <dd>わんコメの参加型管理の「有効化」がオフになっていないか確認してください。オフのときは参加者が入りません。参加者が0人で「0人のときの文字」も空のときは、何も表示しないのが正しい動きです。</dd>
+    <dt>見た目が変わらない</dt>
+    <dd>ブラウザソースが「ローカルファイル」指定になっている（わんコメからドラッグして入れるとこうなります）と、URLの設定は付きません。チェックを外して、URLを貼ってください。URLを貼り直しても変わらないときは、ソースのプロパティで「現在のページのキャッシュを更新」を押してください。</dd>
+    <dt>わんコメの参加型管理の設定を変えても変わらない</dt>
+    <dd>このテンプレートは、わんコメの「OBS用テンプレート」「行／列」「空のときの表記」を使いません。表示する文字・並べ方・0人のときの文字は、このページで選び直してURLを貼り直してください。</dd>
+  </dl>
+
+  <h2>ご利用について</h2>
+  <p>配信や動画で使うときに許可は不要です。ご自由にお使いください。</p>
+  <p class="muted-note">必須ではありませんが、概要欄などでこのページを紹介してもらえると嬉しいです。</p>
+  <div class="output credit">
+    <input type="text" id="credit" readonly value="わんコメ用 参加型の待機リストテンプレート waiting-list https://esusan.github.io/onecomme-waiting-list/">
+    <button type="button" id="credit-copy">コピー</button><span class="copied" id="credit-copied" hidden>コピーしました</span>
+  </div>
+
+  <footer>
+    <div class="foot-links">
+      <span class="foot-label">作成者</span>
+      <a class="foot-name" href="https://esusan.github.io/">えすさん</a>
+      <a class="social home" href="https://esusan.github.io/" title="えすさんのページ" aria-label="えすさんのページ"><img src="https://esusan.github.io/img/favicon.png" alt="" width="30" height="30"></a>
+      <a class="social" href="https://x.com/u_se_nr" target="_blank" rel="noopener noreferrer" title="X" aria-label="X"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+      <a class="social" href="https://www.youtube.com/@%E3%81%88%E3%81%99%E3%81%95%E3%82%93-0" target="_blank" rel="noopener noreferrer" title="YouTube" aria-label="YouTube"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3.02 3.02 0 0 0-2.13-2.14C19.51 3.5 12 3.5 12 3.5s-7.510 0-9.37.56A3.02 3.02 0 0 0 .5 6.2 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.8 3.02 3.02 0 0 0 2.13 2.14C4.49 20.5 12 20.5 12 20.5s7.51 0 9.37-.56a3.02 3.02 0 0 0 2.13-2.14A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.4 3.6z"/></svg></a>
+    </div>
+    <div class="foot-links foot-more">
+      <span class="foot-label">他のツール</span>
+      <a class="foot-name" href="https://esusan.github.io/onecomme-side-comment/">コメントテンプレート side-comment</a>
+      <a class="foot-name" href="https://esusan.github.io/nightreign-picker/">キャラランダムツール</a>
+      <a class="foot-name" href="https://esusan.github.io/nightreign-dict/">ナイトレイン読み上げ辞書</a>
+    </div>
+    <p>※このテンプレートは個人が作った非公式のものです。わんコメ（OneComme）の開発元とは関係ありません。</p>
+    <p>コードはMITライセンスです。同梱フォント UDEV Gothic（© Yuko OTAWARA）は SIL Open Font License 1.1 です。</p>
+  </footer>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+  const DEFAULTS = { text: '{name}', layout: 'row', empty: '参加受付中！', size: 24, side: 'right', play: 'ffd23e', playlabel: 'PLAY', color: 'ffffff', bg: 0, font: 'udev', icon: '1', max: 8 }
+  // 文字を入力する項目（空も値として扱う。text だけは空なら既定に戻す）
+  const TEXT_FIELDS = ['text', 'empty', 'playlabel']
+  const $ = (id) => document.getElementById(id)
+  const radio = (name) => document.querySelector(`input[name="${name}"]:checked`).value
+  const hex = (id) => $(id).value.replace('#', '').toLowerCase()
+
+  function read() {
+    return {
+      text: $('text').value.trim() || DEFAULTS.text,
+      layout: radio('layout'),
+      empty: $('empty').value,
+      size: Number($('size').value),
+      side: radio('side'),
+      play: hex('play'),
+      playlabel: $('playlabel').value,
+      color: hex('color'),
+      bg: Number($('bg').value),
+      font: radio('font'),
+      icon: radio('icon'),
+      max: Number($('max').value),
+    }
+  }
+
+  // 既定値と違うものだけURLに入れる
+  function query(s) {
+    const q = new URLSearchParams()
+    for (const k of Object.keys(DEFAULTS)) if (String(s[k]) !== String(DEFAULTS[k])) q.set(k, s[k])
+    return q.toString()
+  }
+
+  // テンプレートのCSSと同じ計算。幅：左右の余白16 + 番号の欄 + 間6 + アイコン1.4em + 間6 + 全角10文字
+  // 番号の欄は script.js と同じ：2桁の番号か、PLAYの文字（0.65倍。全角1、半角0.6）の広いほう
+  function recommendedWidth(s) {
+    const avatar = s.icon === '1' ? s.size * 1.4 + 6 : 0
+    const units = [...s.playlabel].reduce((n, c) => n + (/[\u0000-ÿ｡-ﾟ]/.test(c) ? 0.6 : 1), 0)
+    const no = Math.ceil(Math.max(s.size * 1.9, s.size * 0.65 * units + 4))
+    return Math.ceil((16 + no + 6 + avatar + s.size * 10) / 10) * 10
+  }
+  // 高さ：上下の余白14 + 行の高さ1.6em×人数 + 行の間4 + 「ほか n人」の行
+  function recommendedHeight(s) {
+    return Math.ceil((14 + s.max * s.size * 1.6 + (s.max - 1) * 4 + 4 + s.size * .8 * 1.5) / 10) * 10
+  }
+
+  function flash(selector, text, changed) {
+    document.querySelectorAll(selector).forEach((el) => {
+      el.textContent = text
+      if (changed) { el.classList.remove('changed'); void el.offsetWidth; el.classList.add('changed') }
+    })
+  }
+
+  let timer
+  let lastSize = null
+  function update() {
+    const s = read()
+    $('size-v').textContent = s.size + 'px'
+    $('play-v').textContent = '#' + s.play
+    $('color-v').textContent = '#' + s.color
+    $('bg-v').textContent = s.bg + '%'
+    $('max-v').textContent = s.max + '人'
+    document.querySelectorAll('.swatch').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.hex === s.play)))
+
+    const q = query(s)
+    $('url').textContent = 'http://localhost:11180/templates/custom/waiting-list/' + (q ? '?' + q : '')
+
+    const column = s.layout === 'column'
+    const w = column ? 1200 : recommendedWidth(s)
+    const h = column ? Math.ceil((14 + s.size * 1.6 * 2 + 4 + 4 + s.size * 1.2) / 10) * 10 : recommendedHeight(s)
+    const key = w + 'x' + h
+    const changed = lastSize !== null && lastSize !== key
+    lastSize = key
+    flash('.rec-w', w + 'px', changed)
+    flash('.rec-h', h + 'px', changed)
+
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      const frame = $('preview')
+      const stage = $('stage')
+      // 列のときはステージの幅いっぱいで見せる
+      frame.style.width = column ? '100%' : w + 'px'
+      frame.style.height = Math.min(h, stage.clientHeight - 24) + 'px'
+      stage.classList.toggle('left', s.side === 'left')
+      // プレビューは全部の設定を付けて開く（テンプレート側の既定値やキャッシュに左右されないように）
+      const all = new URLSearchParams({ demo: radio('stagestate') })
+      for (const k of Object.keys(DEFAULTS)) all.set(k, s[k])
+      // テンプレートの index.html 自体もキャッシュされないよう、開くたびに変わる値を付ける
+      all.set('t', Date.now())
+      frame.src = 'waiting-list/index.html?' + all.toString()
+    }, 250)
+  }
+
+  document.querySelectorAll('#form input').forEach((el) => el.addEventListener('input', update))
+  document.querySelectorAll('input[name="stagestate"]').forEach((el) => el.addEventListener('change', update))
+  document.querySelectorAll('input[name="stagebg"]').forEach((el) =>
+    el.addEventListener('change', () => { $('stage').className = 'stage ' + el.value + (radio('side') === 'left' ? ' left' : '') })
+  )
+  // プレイ中の人の色の候補
+  const SWATCHES = [
+    ['黄', 'ffd23e'], ['オレンジ', 'ff9a3d'], ['ピンク', 'ff6fa8'], ['赤', 'ff5a5a'],
+    ['緑', '5ee07a'], ['青', '5b8cff'], ['紫', 'a98bff'], ['白', 'ffffff'],
+  ]
+  for (const [label, h] of SWATCHES) {
+    const b = document.createElement('button')
+    b.type = 'button'
+    b.className = 'swatch'
+    b.style.background = '#' + h
+    b.title = label
+    b.setAttribute('aria-label', label)
+    b.dataset.hex = h
+    b.addEventListener('click', () => { $('play').value = '#' + h; update() })
+    $('swatches').appendChild(b)
+  }
+
+  async function copyText(text, fallbackEl) {
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      const r = document.createRange(); r.selectNodeContents(fallbackEl)
+      const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); document.execCommand('copy')
+    }
+  }
+  function showCopied(id) {
+    $(id).hidden = false
+    setTimeout(() => { $(id).hidden = true }, 1500)
+  }
+  $('credit-copy').addEventListener('click', async () => { await copyText($('credit').value, $('credit')); showCopied('credit-copied') })
+  $('copy').addEventListener('click', async () => { await copyText($('url').textContent, $('url')); showCopied('copied') })
+
+  // 選んだ設定を config.js に書いて、テンプレートのファイルと一緒にzipにする
+  const TEMPLATE_FILES = ['index.html', 'script.js', 'style.css', 'template.json', 'thumb.png', 'fonts/UDEVGothic-Bold.ttf', 'fonts/LICENSE_UDEVGothic.txt']
+  function configJs(s) {
+    const cfg = {}
+    for (const k of Object.keys(DEFAULTS)) if (String(s[k]) !== String(DEFAULTS[k])) cfg[k] = s[k]
+    return '// waiting-list の設定です。設定ページ（https://esusan.github.io/onecomme-waiting-list/）で作りました\n' +
+      '// URLに設定を付けて開いた場合は、URLの設定が優先されます\n' +
+      'window.WAITING_LIST_CONFIG = ' + JSON.stringify(cfg, null, 2) + '\n'
+  }
+  $('download').addEventListener('click', async () => {
+    const btn = $('download')
+    btn.disabled = true
+    $('download-status').textContent = '準備しています…'
+    try {
+      const zip = new JSZip()
+      const dir = zip.folder('waiting-list')
+      for (const f of TEMPLATE_FILES) {
+        // キャッシュの古いファイルが入らないように、毎回取り直す
+        const res = await fetch('waiting-list/' + f, { cache: 'no-store' })
+        if (!res.ok) throw new Error(f)
+        dir.file(f, await res.arrayBuffer())
+      }
+      dir.file('config.js', configJs(read()))
+      const lic = await fetch('LICENSE')
+      if (lic.ok) dir.file('LICENSE.txt', await lic.text())
+      const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } })
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = 'waiting-list.zip'
+      document.body.appendChild(a); a.click(); a.remove()
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000)
+      $('download-status').textContent = 'ダウンロードしました'
+    } catch (e) {
+      $('download-status').textContent = 'ダウンロードに失敗しました。ページを読み込み直して、もう一度押してください'
+    } finally {
+      btn.disabled = false
+    }
+  })
+
+  // OBSに貼ってあるURL（またはこのページに ?size=… を付けたURL）から設定をフォームに戻す
+  // 項目を足したら LABELS にも足す
+  const LABELS = { text: '1人分の表示', layout: '並べ方', empty: '0人のときの文字', size: '文字の大きさ', side: '寄せる側', play: 'プレイ中の人の色', playlabel: 'プレイ中の人の文字', color: '文字の色', bg: '背景の黒の濃さ', font: 'フォント', icon: 'アイコン', max: '表示する人数' }
+  const COLORS = { play: 'プレイ中の人の色', color: '文字の色' }
+  function applyParams(p) {
+    const notes = []
+    let count = 0
+    // 書かれていない項目は既定値に戻す（URLは既定値と違うものだけ入っているため）
+    for (const k of Object.keys(DEFAULTS)) {
+      const raw = p.has(k) ? p.get(k) : String(DEFAULTS[k])
+      if (p.has(k)) count++
+      const range = document.querySelector(`#form input[type=range]#${k}`)
+      if (range) {
+        const v = Number(raw)
+        if (raw === '' || Number.isNaN(v)) { range.value = DEFAULTS[k]; notes.push(`${LABELS[k]}が読めなかったので既定値にしました`); continue }
+        range.value = v
+        if (Number(range.value) !== v) notes.push(`${LABELS[k]}（${v}）はこのページで選べる範囲外なので${range.value}にしました`)
+        continue
+      }
+      if (COLORS[k]) {
+        let h = raw.replace(/^#/, '').toLowerCase()
+        if (/^[0-9a-f]{3}$/.test(h)) h = h.replace(/./g, (c) => c + c)
+        if (!/^[0-9a-f]{6}$/.test(h)) { h = DEFAULTS[k]; notes.push(`${COLORS[k]}が読めなかったので既定の色にしました`) }
+        $(k).value = '#' + h
+        continue
+      }
+      if (TEXT_FIELDS.includes(k)) { $(k).value = raw; continue }
+      // ラジオ。アイコンはテンプレートと同じく 0 以外は「出す」
+      const v = k === 'icon' ? (raw === '0' ? '0' : '1') : raw
+      const el = document.querySelector(`input[name="${k}"][value="${CSS.escape(v)}"]`)
+        || document.querySelector(`input[name="${k}"][value="${DEFAULTS[k]}"]`)
+      el.checked = true
+    }
+    update()
+    return { count, notes }
+  }
+
+  function importFrom(text) {
+    const status = $('import-status')
+    status.classList.remove('error')
+    let u
+    try { u = new URL(text.trim()) } catch {
+      status.classList.add('error')
+      status.textContent = 'URLとして読めませんでした。OBSのブラウザソースのURL欄をそのままコピーして貼ってください'
+      return
+    }
+    if (!/\/waiting-list\/?(index\.html)?$/.test(u.pathname)) {
+      status.classList.add('error')
+      status.textContent = 'waiting-list のURLではないようです。OBSのブラウザソースのURL欄をそのままコピーして貼ってください'
+      return
+    }
+    const { count, notes } = applyParams(u.searchParams)
+    const head = count ? `${count}項目の設定を読み込みました（書かれていない項目は既定値です）` : '設定の付いていないURLなので、既定値にしました'
+    status.textContent = [head, ...notes].join('。') + '。'
+    // 読み込めたら欄を空にする。古いURLが残っていると、下の新しいURLと間違えてコピーしやすいため
+    $('import-url').value = ''
+  }
+  $('import').addEventListener('click', () => importFrom($('import-url').value))
+  $('import-url').addEventListener('keydown', (e) => { if (e.key === 'Enter') importFrom($('import-url').value) })
+  $('import-url').addEventListener('paste', () => setTimeout(() => importFrom($('import-url').value), 0))
+
+  // このページ自体に設定が付いていたら（?size=24&… ）それを読み込む
+  const own = new URLSearchParams(location.search)
+  if (Object.keys(DEFAULTS).some((k) => own.has(k))) applyParams(own)
+  else update()
+</script>
+<script>
+  // アクセス数の集計（GoatCounter。えすさんの他のページと同じサイトに /onecomme-waiting-list/ として送る）
+  // ローカル確認では送らない。参照元はクエリを落とす。プレビューのiframe（テンプレート本体）では送らない
+  (() => {
+    if (location.protocol === 'file:' || /(localhost$|^127\.|^\[::1\]$)/.test(location.hostname)) return
+    const q = {
+      p: location.pathname,
+      t: document.title,
+      r: document.referrer.replace(/[?#].*$/, ''),
+      s: screen.width,
+      b: navigator.webdriver ? 153 : 0,
+      rnd: Math.random().toString(36).slice(2),
+    }
+    const url = 'https://esusan.goatcounter.com/count?' + new URLSearchParams(q)
+    if (!(navigator.sendBeacon && navigator.sendBeacon(url))) new Image().src = url
+  })()
+</script>
+</body>
+</html>
