@@ -79,7 +79,6 @@
     justify-content: flex-end;
     padding: 12px;
   }
-  .stage.left { justify-content: flex-start; }
   .stage.dark { background: linear-gradient(160deg, #2b3340, #0d1015); }
   .stage.bright { background: linear-gradient(160deg, #f4f7fb, #c9d4e0); }
   .stage.check { background: repeating-conic-gradient(#3a3d42 0 25%, #2a2c30 0 50%) 0 0 / 20px 20px; }
@@ -212,20 +211,12 @@
       </div>
       <div class="field">
         <label for="empty">0人のときの文字</label>
-        <input type="text" class="text" id="empty" value="参加受付中！" maxlength="40" spellcheck="false" autocomplete="off">
+        <input type="text" class="text" id="empty" value="参加者募集中！" maxlength="40" spellcheck="false" autocomplete="off">
         <p class="hint">待っている人が0人のときに表示します（プレイ中の人がいても、待ちが0人なら表示します）。空にすると何も表示しません。</p>
       </div>
       <div class="field">
         <label for="size">文字の大きさ <span class="value" id="size-v"></span></label>
         <input type="range" id="size" min="14" max="40" step="1" value="24">
-      </div>
-      <div class="field">
-        <div class="label">寄せる側</div>
-        <div class="choices">
-          <label><input type="radio" name="side" value="right" checked><span>右端</span></label>
-          <label><input type="radio" name="side" value="left"><span>左端</span></label>
-        </div>
-        <p class="hint">新しく並んだ人が出てくる向きと、「ほか n人」・0人のときの文字を置く側が変わります。</p>
       </div>
       <div class="field">
         <div class="label">プレイ中の人の色 <span class="value" id="play-v"></span></div>
@@ -365,7 +356,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
-  const DEFAULTS = { text: '{name}', layout: 'row', empty: '参加受付中！', size: 24, side: 'right', play: 'ffd23e', playlabel: 'PLAY', color: 'ffffff', bg: 0, font: 'udev', icon: '1', max: 8 }
+  const DEFAULTS = { text: '{name}', layout: 'row', empty: '参加者募集中！', size: 24, play: 'ffd23e', playlabel: 'PLAY', color: 'ffffff', bg: 0, font: 'udev', icon: '1', max: 8 }
   // 文字を入力する項目（空も値として扱う。text だけは空なら既定に戻す）
   const TEXT_FIELDS = ['text', 'empty', 'playlabel']
   const $ = (id) => document.getElementById(id)
@@ -378,7 +369,6 @@
       layout: radio('layout'),
       empty: $('empty').value,
       size: Number($('size').value),
-      side: radio('side'),
       play: hex('play'),
       playlabel: $('playlabel').value,
       color: hex('color'),
@@ -446,7 +436,6 @@
       // 列のときはステージの幅いっぱいで見せる
       frame.style.width = column ? '100%' : w + 'px'
       frame.style.height = Math.min(h, stage.clientHeight - 24) + 'px'
-      stage.classList.toggle('left', s.side === 'left')
       // プレビューは全部の設定を付けて開く（テンプレート側の既定値やキャッシュに左右されないように）
       const all = new URLSearchParams({ demo: radio('stagestate') })
       for (const k of Object.keys(DEFAULTS)) all.set(k, s[k])
@@ -459,7 +448,7 @@
   document.querySelectorAll('#form input').forEach((el) => el.addEventListener('input', update))
   document.querySelectorAll('input[name="stagestate"]').forEach((el) => el.addEventListener('change', update))
   document.querySelectorAll('input[name="stagebg"]').forEach((el) =>
-    el.addEventListener('change', () => { $('stage').className = 'stage ' + el.value + (radio('side') === 'left' ? ' left' : '') })
+    el.addEventListener('change', () => { $('stage').className = 'stage ' + el.value })
   )
   // プレイ中の人の色の候補
   const SWATCHES = [
@@ -534,7 +523,7 @@
 
   // OBSに貼ってあるURL（またはこのページに ?size=… を付けたURL）から設定をフォームに戻す
   // 項目を足したら LABELS にも足す
-  const LABELS = { text: '1人分の表示', layout: '並べ方', empty: '0人のときの文字', size: '文字の大きさ', side: '寄せる側', play: 'プレイ中の人の色', playlabel: 'プレイ中の人の文字', color: '文字の色', bg: '背景の黒の濃さ', font: 'フォント', icon: 'アイコン', max: '表示する人数' }
+  const LABELS = { text: '1人分の表示', layout: '並べ方', empty: '0人のときの文字', size: '文字の大きさ', play: 'プレイ中の人の色', playlabel: 'プレイ中の人の文字', color: '文字の色', bg: '背景の黒の濃さ', font: 'フォント', icon: 'アイコン', max: '表示する人数' }
   const COLORS = { play: 'プレイ中の人の色', color: '文字の色' }
   function applyParams(p) {
     const notes = []

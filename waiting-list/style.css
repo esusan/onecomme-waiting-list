@@ -59,12 +59,11 @@ html, body {
 
 /* 列：横に並べて、入りきらなければ折り返す */
 .layout-column .rows { flex-direction: row; flex-wrap: wrap; column-gap: 14px; row-gap: 4px; }
-.layout-column.side-right .rows { justify-content: flex-end; }
+.layout-column .rows { justify-content: flex-end; }
 .layout-column .no { width: auto; }
 
-/* 空のときの表記は寄せた側にそろえる */
-.row.empty { justify-content: flex-start; }
-.side-right .row.empty { justify-content: flex-end; }
+/* 空のときの表記は右端にそろえる */
+.row.empty { justify-content: flex-end; }
 .row.empty .text { flex: 0 1 auto; }
 
 /* 番号の欄はどの行も同じ幅（PLAYの行は文字を小さくするので、emで決めると欄まで縮んでアイコンがずれる）。幅はscript.jsで計算する */
@@ -92,23 +91,21 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* 「…」のためのoverflow:hiddenで影が切れないよう、影の分だけ内側に余白をとり、外側は同じだけ詰めて位置を変えない */
+  padding: 2px 0 6px 2px;
+  margin: -2px 0 -6px -2px;
 }
 .row.playing .text { color: var(--play); }
 
 .more { margin-top: 4px; font-size: .8em; color: color-mix(in srgb, var(--text) 80%, #000); }
-.side-right .more { text-align: right; }
+.more { text-align: right; }
 
-/* 出入り：寄せた側から開く */
+/* 出入り：右から開く */
 @keyframes open-from-right {
   from { clip-path: inset(0 0 0 100%); }
   to { clip-path: inset(0 0 0 0); }
 }
-@keyframes open-from-left {
-  from { clip-path: inset(0 100% 0 0); }
-  to { clip-path: inset(0 0 0 0); }
-}
-.side-right .row-enter-active { animation: open-from-right 240ms var(--ease-out) both; }
-.side-left .row-enter-active { animation: open-from-left 240ms var(--ease-out) both; }
+.row-enter-active { animation: open-from-right 240ms var(--ease-out) both; }
 .row-leave-active { display: none; }
 .row-move { transition: transform 240ms var(--ease-out); }
 

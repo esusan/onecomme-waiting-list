@@ -5,9 +5,8 @@
 //   text={name}   1人分の表示。{name} {index} {count} {totalCount} {time} {comment} が使える
 //                 {index} があるときは番号の欄を出さない。プレイ中の人は {index} をまわりの記号ごと消す
 //   layout=row    row（縦に並べる） / column（横に並べる）
-//   empty=参加受付中！ 待っている人が0人のときに出す文字（空なら何も出さない）
+//   empty=参加者募集中！ 待っている人が0人のときに出す文字（空なら何も出さない）
 //   size=24       文字の大きさ(px)
-//   side=right    寄せる側（left / right）
 //   color=ffffff  文字の色（#なしの16進）
 //   play=ffd23e   プレイ中の人の色
 //   playlabel=PLAY プレイ中の人の番号の代わりに出す文字
@@ -35,7 +34,6 @@ function color(name, def) {
 }
 
 const SIZE = num('size', 24, 10, 80)
-const SIDE = pick('side', 'right', ['left', 'right'])
 const TEXT_COLOR = color('color', '#ffffff')
 const PLAY_COLOR = color('play', '#ffd23e')
 const PLAY_LABEL = params.has('playlabel') ? params.get('playlabel') : 'PLAY'
@@ -45,7 +43,7 @@ const SHOW_ICON = params.get('icon') !== '0'
 const MAX = Math.round(num('max', 8, 1, 50))
 const TEXT = params.get('text') || '{name}'
 const LAYOUT = pick('layout', 'row', ['row', 'column'])
-const EMPTY_TEXT = params.has('empty') ? params.get('empty') : '参加受付中！'
+const EMPTY_TEXT = params.has('empty') ? params.get('empty') : '参加者募集中！'
 
 const FONTS = {
   udev: '"Waiting List UDEV", "BIZ UDGothic", "BIZ UDゴシック", monospace',
@@ -62,7 +60,6 @@ root.style.setProperty('--font', FONTS[FONT])
 // 番号の欄の幅：2桁の番号（1.9文字分）か、PLAYの文字（行の文字の0.65倍。全角は1、半角は0.6文字分）の広いほう
 const labelUnits = [...PLAY_LABEL].reduce((n, c) => n + (/[\u0000-ÿ｡-ﾟ]/.test(c) ? 0.6 : 1), 0)
 root.style.setProperty('--no-width', Math.ceil(Math.max(SIZE * 1.9, SIZE * 0.65 * labelUnits + 4)) + 'px')
-root.classList.add('side-' + SIDE)
 if (BG > 0) root.classList.add('has-bg')
 if (LAYOUT === 'column') root.classList.add('layout-column')
 
