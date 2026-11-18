@@ -2,8 +2,9 @@
 // わんコメの参加型管理の設定（OBS用テンプレート・行／列・空のときの表記）は使わない。全部ここで決める
 //
 // 設定は config.js か URLパラメータで変える（URLが優先。どちらもなければ既定値）
-//   text={name}   1人分の表示。{name} {index} {count} {totalCount} {time} {comment} が使える
-//                 {index} があるときは番号の欄を出さない。プレイ中の人は {index} をまわりの記号ごと消す
+//   text=         1人分の表示。空なら左に番号の欄（プレイ中はPLAY）を出して名前を並べる
+//                 文字を入れると番号の欄は出さず、入れたとおりに出す。{name} {index} {count} {totalCount} {time} {comment} が使える
+//                 プレイ中の人は {index} をまわりの記号ごと playlabel に置き換える
 //   layout=row    row（縦に並べる） / column（横に並べる）
 //   empty=参加者募集中！ 待っている人が0人のときに出す文字（空なら何も出さない）
 //   size=24       文字の大きさ(px)
@@ -41,7 +42,7 @@ const BG = num('bg', 0, 0, 100)
 const FONT = pick('font', 'udev', ['udev', 'bizud', 'sans'])
 const SHOW_ICON = params.get('icon') !== '0'
 const MAX = Math.round(num('max', 8, 1, 50))
-const TEXT = params.get('text') || '{name}'
+const TEXT = params.get('text') || ''
 const LAYOUT = pick('layout', 'row', ['row', 'column'])
 const EMPTY_TEXT = params.has('empty') ? params.get('empty') : '参加者募集中！'
 
@@ -84,11 +85,12 @@ function plainText(html) {
   return (div.textContent || '').replace(/\r|\n/g, '')
 }
 
-// プレイ中の人は番号がないので、{index} をまわりの記号ごと消す（「{index}. {name}」→「{name}」、「No.{index} {name}」「({index}) {name}」も同じ）
+// プレイ中の人は番号がないので、{index} をまわりの記号ごとPLAYの文字に置き換える
+// （「{index}. {name}」→「PLAY {name}」、「No.{index} {name}」「({index}) {name}」も同じ）。PLAYの文字が空なら消す
 const INDEX_WITH_MARKS = /(?:No\.?|#|＃)?[(（[【]?\{index\}[)）\]】]?[\s.．:：、。\-－]*/gi
-// わんコメ本体と同じ置き換え。index が空（プレイ中の人）なら {index} を消す
+// わんコメ本体と同じ置き換え。index が空ならプレイ中の人
 function render(template, o, index) {
-  if (!index) template = template.replace(INDEX_WITH_MARKS, '')
+  if (!index) template = template.replace(INDEX_WITH_MARKS, PLAY_LABEL ? PLAY_LABEL + ' ' : '').trim()
   const values = {
     index,
     count: String(o.count ?? '-'),
@@ -139,11 +141,11 @@ const app = Vue.createApp({
   },
   computed: {
     template() {
-      return TEXT
+      return TEXT || '{name}'
     },
-    // テンプレートに {index} があれば番号はそちらで出すので、番号の欄は出さない
+    // 番号の欄は1人分の表示が空（既定）のときだけ出す。文字を入れたら入れたとおりだけを出す
     showNo() {
-      return !this.template.includes('{index}')
+      return TEXT === ''
     },
     active() {
       return this.orders.filter((o) => !o.completed)

@@ -198,9 +198,9 @@
     <form class="form" id="form" onsubmit="return false">
       <div class="field">
         <label for="text">1人分の表示</label>
-        <input type="text" class="text" id="text" value="{name}" spellcheck="false" autocomplete="off">
-        <p class="hint">おすすめは <code>{name}</code> だけです（番号とPLAYは左の欄に出て、アイコンと名前が縦にそろいます）。</p>
-        <p class="hint">使える文字：<code>{name}</code> 名前、<code>{index}</code> 番号、<code>{count}</code> 回数、<code>{totalCount}</code> 累積の参加回数、<code>{time}</code> 並んだ時刻、<code>{comment}</code> 参加したときのコメント。<code>{index}</code> を入れると左の番号の欄は出さず、プレイ中の人は <code>{index}</code> をまわりの記号（<code>.</code> や <code>No.</code> など）ごと消して表示します。</p>
+        <input type="text" class="text" id="text" value="" placeholder="空欄（番号＋名前）" spellcheck="false" autocomplete="off">
+        <p class="hint">おすすめは空欄のままです（番号とPLAYは左の欄に出て、アイコンと名前が縦にそろいます）。</p>
+        <p class="hint">文字を入れると左の番号の欄は出さず、入れたとおりに表示します。名前だけにしたいときは <code>{name}</code> と入れます。使える文字：<code>{name}</code> 名前、<code>{index}</code> 番号、<code>{count}</code> 回数、<code>{totalCount}</code> 累積の参加回数、<code>{time}</code> 並んだ時刻、<code>{comment}</code> 参加したときのコメント。プレイ中の人は <code>{index}</code> をまわりの記号（<code>.</code> や <code>No.</code> など）ごと、下の「プレイ中の人の番号の代わりに出す文字」に置き換えて表示します。</p>
       </div>
       <div class="field">
         <div class="label">並べ方</div>
@@ -226,7 +226,7 @@
       <div class="field">
         <label for="playlabel">プレイ中の人の番号の代わりに出す文字</label>
         <input type="text" class="text" id="playlabel" value="PLAY" maxlength="8" spellcheck="false" autocomplete="off">
-        <p class="hint">空にすると何も出しません。1人分の表示に <code>{index}</code> を入れた場合は番号の欄ごと出さないので、この文字も出ません（プレイ中の人は色だけで区別します）。</p>
+        <p class="hint">空にすると何も出しません。1人分の表示に文字を入れた場合は、<code>{index}</code> のところにこの文字を出します（<code>{index}</code> がなければ出さず、プレイ中の人は色だけで区別します）。</p>
       </div>
       <div class="field">
         <div class="label">文字の色 <span class="value" id="color-v"></span></div>
@@ -356,8 +356,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
-  const DEFAULTS = { text: '{name}', layout: 'row', empty: '参加者募集中！', size: 24, play: 'ffd23e', playlabel: 'PLAY', color: 'ffffff', bg: 0, font: 'udev', icon: '1', max: 8 }
-  // 文字を入力する項目（空も値として扱う。text だけは空なら既定に戻す）
+  const DEFAULTS = { text: '', layout: 'row', empty: '参加者募集中！', size: 24, play: 'ffd23e', playlabel: 'PLAY', color: 'ffffff', bg: 0, font: 'udev', icon: '1', max: 8 }
+  // 文字を入力する項目（空も値として扱う。text は空が既定）
   const TEXT_FIELDS = ['text', 'empty', 'playlabel']
   const $ = (id) => document.getElementById(id)
   const radio = (name) => document.querySelector(`input[name="${name}"]:checked`).value
@@ -365,7 +365,7 @@
 
   function read() {
     return {
-      text: $('text').value.trim() || DEFAULTS.text,
+      text: $('text').value.trim(),
       layout: radio('layout'),
       empty: $('empty').value,
       size: Number($('size').value),
