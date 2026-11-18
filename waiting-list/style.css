@@ -92,8 +92,8 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
   /* 「…」のためのoverflow:hiddenで影が切れないよう、影の分だけ内側に余白をとり、外側は同じだけ詰めて位置を変えない */
-  padding: 2px 0 6px 2px;
-  margin: -2px 0 -6px -2px;
+  padding: 2px 4px 6px 2px;
+  margin: -2px -4px -6px -2px;
 }
 .row.playing .text { color: var(--play); }
 
