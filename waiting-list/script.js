@@ -34,7 +34,7 @@ function color(name, def) {
   return /^([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v) ? '#' + v : def
 }
 
-const SIZE = num('size', 24, 10, 80)
+const SIZE = num('size', 24, 10, 120)
 const TEXT_COLOR = color('color', '#ffffff')
 const PLAY_COLOR = color('play', '#ffd23e')
 const PLAY_LABEL = params.has('playlabel') ? params.get('playlabel') : 'PLAY'

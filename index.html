@@ -218,7 +218,7 @@
       </div>
       <div class="field">
         <label for="size">文字の大きさ <span class="value" id="size-v"></span></label>
-        <input type="range" id="size" min="14" max="40" step="1" value="24">
+        <input type="range" id="size" min="14" max="120" step="1" value="24">
       </div>
       <div class="field">
         <div class="label">プレイ中の人の色 <span class="value" id="play-v"></span></div>
@@ -436,8 +436,13 @@
       const frame = $('preview')
       const stage = $('stage')
       // 列のときはステージの幅いっぱいで見せる
+      // 文字が大きくて幅が広いときは、設定欄を押しつぶさないよう縮小して見せる
+      const limit = matchMedia('(max-width: 760px)').matches ? stage.clientWidth - 24 : 520
+      const z = column ? 1 : Math.min(1, limit / w)
+      frame.style.zoom = z
+      frame.style.maxWidth = z < 1 ? 'none' : ''
       frame.style.width = column ? '100%' : w + 'px'
-      frame.style.height = Math.min(h, stage.clientHeight - 24) + 'px'
+      frame.style.height = Math.min(h, (stage.clientHeight - 24) / z) + 'px'
       // プレビューは全部の設定を付けて開く（テンプレート側の既定値やキャッシュに左右されないように）
       const all = new URLSearchParams({ demo: radio('stagestate') })
       for (const k of Object.keys(DEFAULTS)) all.set(k, s[k])
